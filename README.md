@@ -1,2 +1,2 @@
-# asteroids
+# Asteroids
 Asteroids clone in Phaser
