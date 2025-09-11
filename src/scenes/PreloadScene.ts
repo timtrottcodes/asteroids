@@ -3,7 +3,7 @@ import Phaser from "phaser";
 export default class PreloadScene extends Phaser.Scene {
   constructor() { super({ key: "PreloadScene" }); }
 
-  preload() {
+  preload() {    
     const w = this.cameras.main.width;
     const h = this.cameras.main.height;
     this.add.text(w/2, h/2 - 20, "Loading...", { font: "18px monospace" }).setOrigin(0.5);

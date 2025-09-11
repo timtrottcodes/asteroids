@@ -36,12 +36,21 @@ export default class GameScene extends Phaser.Scene {
     for (let i = 0; i < 6; i++) this.spawnAsteroid();
 
     // collisions
-    this.physics.add.overlap(this.bullets, this.asteroids, this.bulletHitsAsteroid, undefined, this);
+    this.physics.add.overlap(
+      this.bullets,
+      this.asteroids,
+      (bullet, asteroid) => this.bulletHitsAsteroid(
+        bullet as Phaser.Physics.Arcade.Image,
+        asteroid as Phaser.Physics.Arcade.Image
+      )
+    );
     this.physics.add.overlap(this.ship, this.asteroids, this.shipHitAsteroid, undefined, this);
 
     // inputs
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    if (this.input.keyboard) {
+      this.cursors = this.input.keyboard.createCursorKeys();
+      this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    }
 
     // touches -> simple virtual fire control: tap to fire, drag to rotate/thrust (basic)
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
@@ -68,7 +77,7 @@ export default class GameScene extends Phaser.Scene {
 
     // thrust (up arrow)
     if (this.cursors.up?.isDown) {
-      this.physics.velocityFromRotation(this.ship.rotation - Math.PI/2, 200, this.ship.body.velocity);
+      this.physics.velocityFromRotation(this.ship.rotation - Math.PI/2, 200, this.ship.body!.velocity);
       // better: add acceleration instead of overriding velocity; simplified here
     }
 
@@ -92,7 +101,7 @@ export default class GameScene extends Phaser.Scene {
     bullet.setDepth(50);
     bullet.setScale(0.6);
     // bullets fly in ship forward direction (ship sprite oriented such that rotation 0 faces right; adjust)
-    this.physics.velocityFromRotation(this.ship.rotation - Math.PI/2, 500, bullet.body.velocity);
+    this.physics.velocityFromRotation(this.ship.rotation - Math.PI/2, 500, bullet.body!.velocity);
     // set lifespan
     this.time.delayedCall(1700, () => bullet.destroy());
     this.bullets.add(bullet);
@@ -113,15 +122,16 @@ export default class GameScene extends Phaser.Scene {
     this.asteroids.add(a);
   }
 
-  private bulletHitsAsteroid(bullet: Phaser.GameObjects.GameObject, asteroid: Phaser.GameObjects.GameObject) {
+  private bulletHitsAsteroid(
+    bulletObj: Phaser.GameObjects.GameObject,
+    asteroidObj: Phaser.GameObjects.GameObject
+  ) {
+    const bullet = bulletObj as Phaser.Physics.Arcade.Image;
+    const asteroid = asteroidObj as Phaser.Physics.Arcade.Image;
+
     bullet.destroy();
     asteroid.destroy();
     this.incrementScore(100);
-    const snd = this.sound.get("explode");
-    if (snd) snd.play();
-
-    // spawn two smaller asteroids for variety
-    this.spawnAsteroid(Phaser.Math.Between(0, this.cameras.main.width), Phaser.Math.Between(0, this.cameras.main.height));
   }
 
   private shipHitAsteroid() {

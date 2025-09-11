@@ -18,19 +18,17 @@ export default class IntroScene extends Phaser.Scene {
     // For each layer we create a ParticleEmitterManager with an emitter config.
     // This avoids calling particles.createEmitter(...) directly.
     layers.forEach(layer => {
-      this.add.particles('star', [
-        {
-          x: { min: 0, max: width },
-          y: { min: 0, max: height },
-          lifespan: 4000,
-          quantity: 1,
-          frequency: layer.frequency,
-          speedY: layer.speed,
-          scale: { start: layer.scale, end: 0.1 },
-          alpha: { start: layer.alpha, end: 0 },
-          blendMode: 'ADD'
-        }
-      ]);
+      this.add.particles(0, 0, 'star', {
+        x: { min: 0, max: this.scale.width },
+        y: { min: 0, max: this.scale.height },
+        lifespan: 4000,
+        speedY: 20,
+        quantity: 1,
+        frequency: 50,
+        scale: { start: 0.5, end: 0 },
+        alpha: { start: 1, end: 0 },
+        blendMode: 'ADD'
+      });
     });
 
     // a blackout layer to do fade in/out
