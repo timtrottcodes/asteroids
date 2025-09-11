@@ -9,6 +9,10 @@ export default class GameScene extends Phaser.Scene {
   private score = 0;
   private scoreText!: Phaser.GameObjects.Text;
   private firingCooldown = 0;
+  private wave = 1;               // current wave
+  private waveBaseAsteroids = 2;  // starting asteroids
+  private waveText!: Phaser.GameObjects.Text;
+  private waveInProgress = false; // prevent multiple wave starts
 
   constructor() { super({ key: "GameScene" }); }
 
@@ -37,8 +41,7 @@ export default class GameScene extends Phaser.Scene {
       runChildUpdate: true
     });
 
-    // spawn some asteroids
-    for (let i = 0; i < 6; i++) this.spawnAsteroid();
+    this.startWave();
 
     // collisions
     this.physics.add.overlap(
@@ -68,6 +71,33 @@ export default class GameScene extends Phaser.Scene {
     // pause/resume on blur
     this.game.events.on('hidden', () => this.scene.pause());
     this.game.events.on('visible', () => this.scene.resume());
+  }
+
+  private startWave() {
+      this.waveInProgress = true;
+
+      // show wave number
+      if (!this.waveText) {
+          this.waveText = this.add.text(
+              this.cameras.main.width / 2,
+              this.cameras.main.height / 3,
+              `WAVE ${this.wave}`,
+              { font: "48px monospace", color: "#ffffff" }
+          ).setOrigin(0.5).setDepth(100);
+      } else {
+          this.waveText.setText(`WAVE ${this.wave}`);
+          this.waveText.setVisible(true);
+      }
+
+      // delay before spawning asteroids
+      this.time.delayedCall(2000, () => {
+          const numAsteroids = this.waveBaseAsteroids + (this.wave - 1);
+          for (let i = 0; i < numAsteroids; i++) {
+              this.spawnAsteroid();
+          }
+          this.waveText.setVisible(false);
+          this.waveInProgress = false;
+      });
   }
 
   update(time: number, delta: number) {
@@ -103,6 +133,13 @@ export default class GameScene extends Phaser.Scene {
     // wrap objects
     this.wrapObject(this.ship);
     this.asteroids.getChildren().forEach((a: any) => this.wrapObject(a));
+
+    // check if all asteroids are destroyed
+    const activeAsteroids = this.asteroids.getChildren().filter((a: any) => a.active);
+    if (activeAsteroids.length === 0 && !this.waveInProgress) {
+        this.wave++;
+        this.startWave();
+    }
   }
 
   private fireBullet() {
@@ -134,41 +171,68 @@ export default class GameScene extends Phaser.Scene {
     if (snd) snd.play();
   }
 
-  private spawnAsteroid(x?: number, y?: number) {
-    const w = this.cameras.main.width;
-    const h = this.cameras.main.height;
+  private bulletHitsAsteroid(
+      bulletObj: Phaser.GameObjects.GameObject,
+      asteroidObj: Phaser.GameObjects.GameObject
+  ) {
+      const bullet = bulletObj as Phaser.Physics.Arcade.Sprite;
+      const asteroid = asteroidObj as Phaser.Physics.Arcade.Sprite;
 
-    const asteroid = this.asteroids.get(
-      x ?? Phaser.Math.Between(0, w),
-      y ?? Phaser.Math.Between(0, h),
-      "asteroid"
-    ) as Phaser.Physics.Arcade.Sprite;
+      // deactivate bullet
+      bullet.setActive(false);
+      bullet.setVisible(false);
+      bullet.body!.enable = false;
 
-    if (!asteroid) return;
+      const size = asteroid.getData("size") as number;
 
-    asteroid.setActive(true);
-    asteroid.setVisible(true);
-    asteroid.body!.enable = true;
+      // deactivate asteroid
+      asteroid.setActive(false);
+      asteroid.setVisible(false);
+      asteroid.body!.enable = false;
 
-    asteroid.setVelocity(Phaser.Math.Between(-80, 80), Phaser.Math.Between(-80, 80));
-    asteroid.setAngularVelocity(Phaser.Math.Between(-50, 50));
-    asteroid.setData("size", 3);
+      this.incrementScore(100);
+
+      // spawn smaller asteroids if size > 1
+      if (size > 1) {
+          const newSize = size - 1;
+          for (let i = 0; i < 2; i++) {
+              this.spawnAsteroid(
+                  asteroid.x,
+                  asteroid.y,
+                  newSize
+              );
+          }
+      }
   }
 
-  private bulletHitsAsteroid(bulletObj: Phaser.GameObjects.GameObject, asteroidObj: Phaser.GameObjects.GameObject) {
-    const bullet = bulletObj as Phaser.Physics.Arcade.Sprite;
-    const asteroid = asteroidObj as Phaser.Physics.Arcade.Sprite;
+  // patched spawnAsteroid to accept size
+  private spawnAsteroid(x?: number, y?: number, size: number = 3) {
+      const w = this.cameras.main.width;
+      const h = this.cameras.main.height;
 
-    bullet.setActive(false);
-    bullet.setVisible(false);
-    bullet.body!.enable = false;
+      const asteroid = this.asteroids.get(
+          x ?? Phaser.Math.Between(0, w),
+          y ?? Phaser.Math.Between(0, h),
+          `asteroid_${size}`
+      ) as Phaser.Physics.Arcade.Sprite;
 
-    asteroid.setActive(false);
-    asteroid.setVisible(false);
-    asteroid.body!.enable = false;
+      if (!asteroid) return;
 
-    this.incrementScore(100);
+      asteroid.setActive(true);
+      asteroid.setVisible(true);
+      asteroid.body!.enable = true;
+
+      // smaller asteroids are faster
+      const speedMultiplier = 1 + (3 - size) * 0.5;
+
+      asteroid.setVelocity(
+          Phaser.Math.Between(-80, 80) * speedMultiplier,
+          Phaser.Math.Between(-80, 80) * speedMultiplier
+      );
+      asteroid.setAngularVelocity(Phaser.Math.Between(-50, 50));
+      asteroid.setData("size", size);
   }
+
 
   private shipHitAsteroid() {
     this.scene.pause();
