@@ -20,9 +20,12 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.image("asteroid_1", "/src/assets/asteroid_1.png");
     this.load.image("asteroid_2", "/src/assets/asteroid_2.png");
     this.load.image("asteroid_3", "/src/assets/asteroid_3.png");
+    this.load.image("asteroid_particle", "/src/assets/asteroid_particle.png");
+    this.load.image("ship_particle", "/src/assets/ship_particle.png");
 
     this.load.audio("shoot", "/src/assets/shoot.wav");
     this.load.audio("explode", "/src/assets/explode.wav");
+    this.load.audio("life_lost", "/src/assets/life_lost.wav");
   }
 
   create() {

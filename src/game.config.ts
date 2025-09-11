@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 
-export const GAME_WIDTH = 800;
-export const GAME_HEIGHT = 600;
+export const GAME_WIDTH = 1024;
+export const GAME_HEIGHT = 768;
 
 export const phaserConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -11,7 +11,7 @@ export const phaserConfig: Phaser.Types.Core.GameConfig = {
     default: "arcade",
     arcade: {
       debug: false,
-      gravity: { y: 0 }
+      gravity: { x: 0, y: 0 }
     }
   },
   scale: {

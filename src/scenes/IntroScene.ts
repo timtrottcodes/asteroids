@@ -22,11 +22,11 @@ export default class IntroScene extends Phaser.Scene {
         x: { min: 0, max: this.scale.width },
         y: { min: 0, max: this.scale.height },
         lifespan: 4000,
-        speedY: 20,
+        speedY: layer.speed,
         quantity: 1,
-        frequency: 50,
-        scale: { start: 0.5, end: 0 },
-        alpha: { start: 1, end: 0 },
+        frequency: layer.frequency,
+        scale: { start: layer.scale, end: 0 },
+        alpha: { start: layer.alpha, end: 0 },
         blendMode: 'ADD'
       });
     });
