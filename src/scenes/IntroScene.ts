@@ -37,7 +37,6 @@ export default class IntroScene extends Phaser.Scene {
 
     // Logo and title (start invisible)
     const logo = this.add.image(width/2, height/2 - 40, "logo").setDepth(11).setScale(0.8).setAlpha(0);
-    const title = this.add.text(width/2, height/2 + 80, "ASTEROIDS", { font: "48px monospace" }).setOrigin(0.5).setDepth(11).setAlpha(0);
 
     // sequence:
     // 1) fadeout starfield reveal (fade blackout -> 0)
@@ -53,7 +52,7 @@ export default class IntroScene extends Phaser.Scene {
         // logo in
         this.time.delayedCall(600, () => {
           this.tweens.add({
-            targets: [logo, title],
+            targets: [logo],
             alpha: 1,
             duration: 900,
             ease: "Quad.easeInOut"
@@ -63,9 +62,9 @@ export default class IntroScene extends Phaser.Scene {
     });
 
     // after logo visible for some time, fade out everything
-    this.time.delayedCall(3000, () => {
+    this.time.delayedCall(6000, () => {
       this.tweens.add({
-        targets: [logo, title],
+        targets: [logo],
         alpha: 0,
         duration: 600,
         ease: "Quad.easeIn"

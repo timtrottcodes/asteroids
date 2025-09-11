@@ -31,14 +31,16 @@ export default class GameScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     this.score = 0;
 
-    this.currentBg = this.add.image(width/2, height/2, `bg_${this.bgNumber}`).setOrigin(0.5, 0.5);
+    this.currentBg = this.add.image(width/2, height/2, `bg_${this.bgNumber}`).setOrigin(0.5, 0.5).setDepth(1);
 
     // create ship in center
     this.ship = this.physics.add
       .sprite(width / 2, height / 2, "ship")
       .setDamping(true)
       .setDrag(0.3)
-      .setMaxVelocity(400);
+      .setMaxVelocity(400)
+      .setScale(0.5)
+      .setDepth(10);
     this.ship.setCollideWorldBounds(false); // wrap manually
 
     // bullets group
@@ -160,21 +162,22 @@ export default class GameScene extends Phaser.Scene {
     bullet.setVisible(true);
     bullet.body!.enable = true;
     bullet.setScale(0.6);
-    bullet.setDepth(50);
+    bullet.setDepth(9);
+    bullet.setRotation(this.ship.rotation);
     bullet.setCollideWorldBounds(false);
 
     // Set velocity
     bullet.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
     // Auto disable/destroy
-    this.time.delayedCall(1700, () => {
+    this.time.delayedCall(1800, () => {
       bullet.setActive(false);
       bullet.setVisible(false);
       bullet.body!.enable = false;
     });
 
-    const snd = this.sound.get("shoot");
-    if (snd) snd.play();
+    const snd = this.sound.add("shoot");
+    if (snd) snd.play(); else console.log("shoot not fouind");
   }
 
   private bulletHitsAsteroid(bulletObj: Phaser.GameObjects.GameObject, asteroidObj: Phaser.GameObjects.GameObject) {
@@ -182,7 +185,7 @@ export default class GameScene extends Phaser.Scene {
     const asteroid = asteroidObj as Phaser.Physics.Arcade.Sprite;
 
     // play explode sound
-    const snd = this.sound.get("explode");
+    const snd = this.sound.add("explode");
     if (snd) snd.play();
 
     // deactivate bullet
@@ -211,7 +214,7 @@ export default class GameScene extends Phaser.Scene {
   }
   
   private spawnExplosionParticles(type: string, x: number, y: number, size: number = 3) {
-      const particleCount = size * 5; // more particles for bigger asteroids
+      const particleCount = size * 10; // more particles for bigger asteroids
 
       // Create ParticleEmitterManager at asteroid position
       const particles = this.add.particles(x, y, type, {
@@ -227,7 +230,7 @@ export default class GameScene extends Phaser.Scene {
           gravityY: 0,
           frequency: 0,
           maxParticles: particleCount
-      });
+      }).setDepth(100);
 
       // Explode all particles immediately
       particles.emitParticleAt(0, 0, particleCount);
@@ -237,30 +240,50 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private spawnAsteroid(x?: number, y?: number, size: number = 3) {
-    const w = this.cameras.main.width;
-    const h = this.cameras.main.height;
+      const w = this.cameras.main.width;
+      const h = this.cameras.main.height;
 
-    const asteroid = this.asteroids.get(x ?? Phaser.Math.Between(0, w), y ?? Phaser.Math.Between(0, h), `asteroid_${size}`) as Phaser.Physics.Arcade.Sprite;
+      // Randomly pick a texture index between 1 and 4
+      const textureIndex = Phaser.Math.Between(1, 4);
+      const textureKey = `asteroid_${textureIndex}_${size}`;
 
-    if (!asteroid) return;
+      // Get asteroid from pool or create new
+      const asteroid = this.asteroids.get(
+          x ?? Phaser.Math.Between(0, w),
+          y ?? Phaser.Math.Between(0, h),
+          textureKey
+      ) as Phaser.Physics.Arcade.Sprite;
 
-    asteroid.setActive(true);
-    asteroid.setVisible(true);
-    asteroid.body!.enable = true;
+      if (!asteroid) return;
 
-    // smaller asteroids are faster
-    const speedMultiplier = 1 + (3 - size) * 0.5;
+      asteroid.setTexture(textureKey);
+      asteroid.setActive(true);
+      asteroid.setVisible(true);
+      asteroid.body!.enable = true;
 
-    asteroid.setVelocity(Phaser.Math.Between(-80, 80) * speedMultiplier, Phaser.Math.Between(-80, 80) * speedMultiplier);
-    asteroid.setAngularVelocity(Phaser.Math.Between(-50, 50));
-    asteroid.setData("size", size);
+      // Smaller asteroids move faster
+      const speedMultiplier = 1 + (3 - size) * 0.5;
+      asteroid.setVelocity(
+          Phaser.Math.Between(-80, 80) * speedMultiplier,
+          Phaser.Math.Between(-80, 80) * speedMultiplier
+      );
+      asteroid.setAngularVelocity(Phaser.Math.Between(-50, 50));
+      asteroid.setData("size", size);
+      asteroid.setScale(0.6);
+      asteroid.setDepth(5);
+
+      // Add to group if not already
+      if (!this.asteroids.contains(asteroid)) {
+          this.asteroids.add(asteroid);
+      }
   }
+
 
   private shipHitAsteroid() {
     if (this.isInvincible) return; // ignore hits during invincibility
 
     // play life lost sound
-    const snd = this.sound.get("life_lost");
+    const snd = this.sound.add("life_lost");
     if (snd) snd.play();
     
     this.spawnExplosionParticles('ship_particle', this.ship.x, this.ship.y, 1);
@@ -337,7 +360,7 @@ export default class GameScene extends Phaser.Scene {
     const nextTexture = `bg_${nextBgNumber}`;
 
     // Create new background at 0 alpha, normal scale
-    this.nextBg = this.add.image(width/2, height/2, nextTexture).setAlpha(0).setScale(1);
+    this.nextBg = this.add.image(width/2, height/2, nextTexture).setAlpha(0).setScale(1).setDepth(1);
 
     // Stretch current background vertically to 1000% over 1.5s
     this.tweens.add({
