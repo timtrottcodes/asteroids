@@ -3,6 +3,8 @@
 This project was created as a **personal challenge in a 24-hour game jam (including sleep)**.  
 The goal was to see how much of a polished game I could build within that limited time frame.
 
+👉 Play online at [TimTrottCodes](https://timtrottcodes.github.io/)
+
 ---
 
 ## 🎮 Gameplay
